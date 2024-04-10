@@ -1,10 +1,14 @@
 package com.example.letsgo;
 
 import android.app.Activity;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.InputType;
+import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResult;
@@ -12,23 +16,31 @@ import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.letsgo.databinding.ActivityMainBinding;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     ActivityMainBinding binding ;
     Uri imageUri;
     StorageReference storageReference;
+
+    FirebaseFirestore firestore;
+    String mapDocId ;
 
     @Override
     protected void onCreate(Bundle savedInstance ) {
@@ -53,24 +65,63 @@ public class MainActivity extends AppCompatActivity {
 
     private void uploadImage() {
 
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy_dd_HH_mm_ss", Locale.US);
-        Date now = new Date();
-        String fileName = formatter.format(now);
-        storageReference = FirebaseStorage.getInstance().getReference("images/"+fileName);
-        storageReference.putFile(imageUri)
-                .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                    @Override
-                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-//                        binding.firebaseImage.
-                        Toast.makeText(MainActivity.this, "Successfully uploaded", Toast.LENGTH_SHORT).show();
-                    }
-                }).addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Toast.makeText(MainActivity.this, "Failed uploaded", Toast.LENGTH_SHORT).show();
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        builder.setTitle("Please Enter Map Name");
 
-                    }
-                });
+        final EditText input = new EditText(MainActivity.this);
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        builder.setView(input);
+
+        builder.setPositiveButton("Upload", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String mapName = input.getText().toString().trim(); // Get the entered map name
+
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy_dd_HH_mm_ss", Locale.US);
+                Date now = new Date();
+                String fileName = formatter.format(now);
+                storageReference = FirebaseStorage.getInstance().getReference("images/"+fileName);
+                storageReference.putFile(imageUri)
+                        .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                            @Override
+                            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                                Toast.makeText(MainActivity.this, "Successfully uploaded", Toast.LENGTH_SHORT).show();
+                                showImage(imageUri);
+                            }
+                        }).addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                Toast.makeText(MainActivity.this, "Failed uploaded",
+                                        Toast.LENGTH_SHORT).show();
+
+                            }
+                        });
+                firestore = FirebaseFirestore.getInstance();
+                MapInfo mapInfo = new MapInfo(storageReference.getPath(),-1,
+                        -1, mapName);
+                firestore.collection("map")
+                        .add(mapInfo)
+                        .addOnSuccessListener(documentReference -> {
+                            // Document has been added successfully
+                            mapDocId = documentReference.getId(); // Get the generated document ID
+                            // You can now use the document ID as needed
+                            Log.d("Firebase", "DocumentSnapshot written with ID: " + mapDocId);
+                        })
+                        .addOnFailureListener(e -> {
+                            // Handle errors
+                            Log.e("Firebase", "Error adding document", e);
+                        });;
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+
+        builder.show();
+
     }
 
     private void selectImage() {
@@ -81,6 +132,13 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private void showImage(Uri imageUri){
+        Intent intent = new Intent(MainActivity.this, ReferencePointActivity.class);
+        intent.putExtra("imageUri",imageUri.toString());
+        intent.putExtra("mapDocId" , mapDocId);
+        startActivity(intent);
+    }
+
    ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
            new ActivityResultContracts.StartActivityForResult(),
            new ActivityResultCallback<ActivityResult>() {
@@ -89,8 +147,6 @@ public class MainActivity extends AppCompatActivity {
                    if(result.getResultCode() == Activity.RESULT_OK){
                        Intent data = result.getData();
                        imageUri = data.getData();
-//                       binding.firebaseimage.se
-                       // Do operation
                    }
                }
            }

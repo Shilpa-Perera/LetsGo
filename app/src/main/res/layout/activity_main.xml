@@ -12,10 +12,9 @@
         android:text="Select Image"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.631" />
+        app:layout_constraintVertical_bias="0.769" />
 
     <Button
         android:id="@+id/uploadImageButton"
@@ -24,8 +23,8 @@
         android:text="Upload Image"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintHorizontal_bias="0.496"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/selectImageButton"
-        app:layout_constraintVertical_bias="0.245" />
+        app:layout_constraintVertical_bias="0.274" />
 </androidx.constraintlayout.widget.ConstraintLayout>

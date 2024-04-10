@@ -21,5 +21,9 @@
             </intent-filter>
 
         </activity>
+        <activity
+            android:name=".ReferencePointActivity"
+            android:label="Reference Point Activity">
+        </activity>
     </application>
 </manifest>

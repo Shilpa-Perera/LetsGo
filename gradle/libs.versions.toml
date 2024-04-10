@@ -7,6 +7,8 @@ appcompat = "1.6.1"
 material = "1.11.0"
 googleServices = "4.4.1"
 firebaseStorage = "20.3.0"
+photoViewer = "2.3.0"
+firebaseFirestore = "24.11.0"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -16,6 +18,8 @@ appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "a
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 google-services = { group = "com.google.gms", name = "google-services", version.ref = "googleServices" }
 firebase-storage = { group = "com.google.firebase", name = "firebase-storage", version.ref = "firebaseStorage" }
+photo = {module = "com.github.chrisbanes:PhotoView" , name = "photo-viewer" , version.ref = "photoViewer"}
+firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore", version.ref = "firebaseFirestore" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
