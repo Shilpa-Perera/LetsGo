@@ -13,6 +13,10 @@ public class RefPoint {
         this.refPointX = refPointX;
         this.refPointY = refPointY;
     }
+
+    public RefPoint() {
+    }
+
     public String getMapId() {
         return mapId;
     }

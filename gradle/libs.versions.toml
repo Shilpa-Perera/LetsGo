@@ -9,6 +9,8 @@ googleServices = "4.4.1"
 firebaseStorage = "20.3.0"
 photoViewer = "2.3.0"
 firebaseFirestore = "24.11.0"
+glide = "4.14.2"
+fb-ui = "8.0.2"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -17,9 +19,15 @@ espresso-core = { group = "androidx.test.espresso", name = "espresso-core", vers
 appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 google-services = { group = "com.google.gms", name = "google-services", version.ref = "googleServices" }
-firebase-storage = { group = "com.google.firebase", name = "firebase-storage", version.ref = "firebaseStorage" }
 photo = {module = "com.github.chrisbanes:PhotoView" , name = "photo-viewer" , version.ref = "photoViewer"}
+firebase-storage = { group = "com.google.firebase", name = "firebase-storage", version.ref = "firebaseStorage" }
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore", version.ref = "firebaseFirestore" }
+firebase-ui-storage = {group = "com.firebaseui" , name = "firebase-ui-storage" , version.ref = "fb-ui"}
+glide = {group = "com.github.bumptech.glide" , name = "glide" , version.ref = "glide"}
+glide-compiler = {group = "com.github.bumptech.glide" , name = "compiler" , version.ref = "glide"}
+glide-annotation = {group = "com.github.bumptech.glide" , name = "annotations" , version.ref = "glide"}
+
+
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

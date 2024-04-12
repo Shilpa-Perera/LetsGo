@@ -13,6 +13,9 @@ public class MapInfo {
         this.mapName = mapName;
     }
 
+    public MapInfo() {
+    }
+
 
     public String getImageURI() {
         return imageURI;

@@ -2,6 +2,7 @@ package com.example.letsgo;
 
 import android.annotation.SuppressLint;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.InputType;
@@ -10,6 +11,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -26,16 +28,12 @@ import java.util.HashMap;
 
 public class ReferencePointActivity extends AppCompatActivity {
 
-//    private ImageView imageView;
-    private EditText placeNameEditText;
     private ViewGroup rootView;
     private  ImageView iconImageView ;
-
     private FirebaseFirestore firestore;
     private String mapDocId;
-    private  int imageViewWidth;
-    private  int imageViewHeight;
-
+    private  float imageViewWidth;
+    private  float imageViewHeight;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -44,29 +42,29 @@ public class ReferencePointActivity extends AppCompatActivity {
         setContentView(R.layout.activity_reference_point);
 
         ImageView imageView = findViewById(R.id.imageView);
+        Button button = findViewById(R.id.nextButton);
+
         String imageUriString = getIntent().getStringExtra("imageUri");
         if (imageUriString != null) {
             Uri imageUri = Uri.parse(imageUriString);
             imageView.setImageURI(imageUri);
         }
         mapDocId = getIntent().getStringExtra("mapDocId");
-        placeNameEditText = findViewById(R.id.placeNameEditText);
         rootView = findViewById(android.R.id.content);
 
         // Add global layout listener to get dimensions after layout is drawn
         imageView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
             public void onGlobalLayout() {
-                // Get the dimensions of the ImageView
+
                 imageViewWidth = imageView.getWidth();
                 imageViewHeight = imageView.getHeight();
+                System.out.println("image width, height : "+imageViewWidth+" , "+iconImageView );
 
-                // Update an existing document
                 firestore = FirebaseFirestore.getInstance();
                 DocumentReference docRef = firestore.collection("map").document(mapDocId);
                 docRef.update("mapHeight", imageViewHeight, "mapWidth", imageViewWidth);
 
-                // Remove the listener to avoid multiple calls
                 imageView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
             }
         });
@@ -77,19 +75,33 @@ public class ReferencePointActivity extends AppCompatActivity {
                 int action = event.getAction();
                 switch (action) {
                     case MotionEvent.ACTION_DOWN:
-                        float x = event.getX();
-                        float y = event.getY();
+
+
+                        float x =  event.getX();
+                        float y = event.getY() ;
+
+                        int[] location = new int[2];
+                        imageView.getLocationOnScreen(location);
+
+                        int topX = location[0];
+                        int topY = location[1];
 
                         displayIcon(x,y);
-                        showPlaceNameDialog(x,y);
+                        showPlaceNameDialog(x,y , topX , topY);
                 }
                 return true;
             }
         });
 
+        button.setOnClickListener(view -> {
+            Intent intent = new Intent(ReferencePointActivity.this, ShowMapActivity.class);
+            intent.putExtra("mapDocId" , mapDocId);
+            startActivity(intent);
+        });
+
     }
 
-    private void showPlaceNameDialog(float x, float y) {
+    private void showPlaceNameDialog(float x, float y , int X , int Y) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Enter Reference Point Name");
 
@@ -98,14 +110,16 @@ public class ReferencePointActivity extends AppCompatActivity {
         input.setInputType(InputType.TYPE_CLASS_TEXT);
         builder.setView(input);
 
+        // Percentages of points
+        float relativeX = (x - X) * 100 /imageViewWidth ;
+        float relativeY = (y - Y) * 100 / imageViewHeight;
+
         // Set up the buttons
         builder.setPositiveButton("Done", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 String locationName = input.getText().toString();
-                float normalizedX = x / imageViewWidth;
-                float normalizedY = y / imageViewHeight;
-                RefPoint refPoint = new RefPoint(mapDocId,locationName,normalizedX,normalizedY);
+                RefPoint refPoint = new RefPoint(mapDocId,locationName,relativeX,relativeY);
                 firestore.collection("ref_points")
                         .add(refPoint)
                         .addOnSuccessListener(documentReference -> {
@@ -130,7 +144,6 @@ public class ReferencePointActivity extends AppCompatActivity {
     }
 
     private void displayIcon(float x, float y) {
-        // Create a new ImageView for the icon
         iconImageView = new ImageView(this);
         iconImageView.setImageResource(R.drawable.baseline_location_on_24); // Set your icon here
         int size = getResources().getDimensionPixelSize(R.dimen.icon_size); // Set icon size
