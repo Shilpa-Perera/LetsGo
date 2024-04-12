@@ -11,6 +11,7 @@ photoViewer = "2.3.0"
 firebaseFirestore = "24.11.0"
 glide = "4.14.2"
 fb-ui = "8.0.2"
+playServicesLocation = "21.2.0"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -26,6 +27,7 @@ firebase-ui-storage = {group = "com.firebaseui" , name = "firebase-ui-storage" ,
 glide = {group = "com.github.bumptech.glide" , name = "glide" , version.ref = "glide"}
 glide-compiler = {group = "com.github.bumptech.glide" , name = "compiler" , version.ref = "glide"}
 glide-annotation = {group = "com.github.bumptech.glide" , name = "annotations" , version.ref = "glide"}
+play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 
 
 

@@ -6,6 +6,9 @@ public class MapInfo {
     private int mapWidth ;
     private String mapName ;
 
+    private double gpsLatitude;
+    private double gpsLongitude;
+
     public MapInfo(String imageURI, int mapHeight, int mapWidth, String mapName) {
         this.imageURI = imageURI;
         this.mapHeight = mapHeight;
@@ -47,5 +50,21 @@ public class MapInfo {
 
     public void setMapName(String mapName) {
         this.mapName = mapName;
+    }
+
+    public double getGpsLatitude() {
+        return gpsLatitude;
+    }
+
+    public void setGpsLatitude(double gpsLatitude) {
+        this.gpsLatitude = gpsLatitude;
+    }
+
+    public double getGpsLongitude() {
+        return gpsLongitude;
+    }
+
+    public void setGpsLongitude(double gpsLongitude) {
+        this.gpsLongitude = gpsLongitude;
     }
 }

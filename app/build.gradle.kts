@@ -42,6 +42,7 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.glide)
     implementation(libs.firebase.ui.storage)
+    implementation(libs.play.services.location)
     compileOnly(libs.glide.compiler)
     annotationProcessor(libs.glide.compiler)
     testImplementation(libs.junit)
