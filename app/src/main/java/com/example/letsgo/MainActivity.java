@@ -36,11 +36,6 @@ import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     ActivityMainBinding binding ;
-    Uri imageUri;
-    StorageReference storageReference;
-
-    FirebaseFirestore firestore;
-    String mapDocId ;
 
     @Override
     protected void onCreate(Bundle savedInstance ) {
@@ -48,107 +43,29 @@ public class MainActivity extends AppCompatActivity {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        binding.selectImageButton.setOnClickListener(new View.OnClickListener() {
+        binding.adminLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                selectImage();
+                adminLogin();
             }
         });
 
-        binding.uploadImageButton.setOnClickListener(new View.OnClickListener() {
+        binding.user.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                uploadImage();
+                userAccess();
             }
         });
     }
 
-    private void uploadImage() {
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-        builder.setTitle("Please Enter Map Name");
-
-        final EditText input = new EditText(MainActivity.this);
-        input.setInputType(InputType.TYPE_CLASS_TEXT);
-        builder.setView(input);
-
-        builder.setPositiveButton("Upload", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                String mapName = input.getText().toString().trim(); // Get the entered map name
-
-                SimpleDateFormat formatter = new SimpleDateFormat("yyyy_dd_HH_mm_ss", Locale.US);
-                Date now = new Date();
-                String fileName = formatter.format(now);
-                storageReference = FirebaseStorage.getInstance().getReference("images/"+fileName);
-                storageReference.putFile(imageUri)
-                        .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                            @Override
-                            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                                Toast.makeText(MainActivity.this, "Successfully uploaded", Toast.LENGTH_SHORT).show();
-                                showImage(imageUri);
-                            }
-                        }).addOnFailureListener(new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                Toast.makeText(MainActivity.this, "Failed uploaded",
-                                        Toast.LENGTH_SHORT).show();
-
-                            }
-                        });
-                firestore = FirebaseFirestore.getInstance();
-                MapInfo mapInfo = new MapInfo(storageReference.getPath(),-1,
-                        -1, mapName);
-                firestore.collection("map")
-                        .add(mapInfo)
-                        .addOnSuccessListener(documentReference -> {
-                            // Document has been added successfully
-                            mapDocId = documentReference.getId(); // Get the generated document ID
-                            // You can now use the document ID as needed
-                            Log.d("Firebase", "DocumentSnapshot written with ID: " + mapDocId);
-                        })
-                        .addOnFailureListener(e -> {
-                            // Handle errors
-                            Log.e("Firebase", "Error adding document", e);
-                        });;
-            }
-        });
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.cancel();
-            }
-        });
-
-        builder.show();
-
-    }
-
-    private void selectImage() {
-        Intent intent = new Intent();
-        intent.setType("image/");
-        intent.setAction(Intent.ACTION_GET_CONTENT);
-        activityResultLauncher.launch(intent);
-
-    }
-
-    private void showImage(Uri imageUri){
-        Intent intent = new Intent(MainActivity.this, ReferencePointActivity.class);
-        intent.putExtra("imageUri",imageUri.toString());
-        intent.putExtra("mapDocId" , mapDocId);
+    private void adminLogin(){
+        Intent intent = new Intent(MainActivity.this, AdminAuthenticationActivity.class);
         startActivity(intent);
     }
 
-   ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
-           new ActivityResultContracts.StartActivityForResult(),
-           new ActivityResultCallback<ActivityResult>() {
-               @Override
-               public void onActivityResult(ActivityResult result) {
-                   if(result.getResultCode() == Activity.RESULT_OK){
-                       Intent data = result.getData();
-                       imageUri = data.getData();
-                   }
-               }
-           }
-   );
+    private void userAccess(){
+
+    }
+
+
 }

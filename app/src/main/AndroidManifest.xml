@@ -34,5 +34,13 @@
             android:name=".ShowMapActivity"
             android:label="Your Map">
         </activity>
+        <activity
+            android:name=".AdminAuthenticationActivity"
+            android:label="Sign-in">
+        </activity>
+        <activity
+            android:name=".ImageUploadActivity"
+            android:label="Upload the map ">
+        </activity>
     </application>
 </manifest>

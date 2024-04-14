@@ -28,7 +28,8 @@ glide = {group = "com.github.bumptech.glide" , name = "glide" , version.ref = "g
 glide-compiler = {group = "com.github.bumptech.glide" , name = "compiler" , version.ref = "glide"}
 glide-annotation = {group = "com.github.bumptech.glide" , name = "annotations" , version.ref = "glide"}
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
-
+firebase-auth = {group = "com.google.firebase" , name = "firebase-auth" }
+firebase-ui-auth = {group = "com.firebaseui" , name = "firebase-ui-auth" , version.ref = "fb-ui"}
 
 
 [plugins]
