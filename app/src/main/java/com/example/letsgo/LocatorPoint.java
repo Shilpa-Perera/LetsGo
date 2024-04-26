@@ -1,27 +1,11 @@
 package com.example.letsgo;
 
-import java.util.List;
-
-public class RefPoint {
-
+public class LocatorPoint {
     private String mapId;
     private String locationName;
     private float refPointX;
     private float refPointY;
-
-    private List<AccessPoint> accessPointList;
-
-    public RefPoint(String mapId, String locationName, float refPointX, float refPointY,
-                    List<AccessPoint> accessPointList) {
-        this.mapId = mapId;
-        this.locationName = locationName;
-        this.refPointX = refPointX;
-        this.refPointY = refPointY;
-        this.accessPointList = accessPointList;
-    }
-
-    public RefPoint() {
-    }
+    private int distance;
 
     public String getMapId() {
         return mapId;
@@ -55,10 +39,11 @@ public class RefPoint {
         this.refPointY = refPointY;
     }
 
-    public List<AccessPoint> getAccessPointList() {
-        return accessPointList;
+    public int getDistance() {
+        return distance;
     }
-    public void setAccessPointList(List<AccessPoint> accessPointList) {
-        this.accessPointList = accessPointList;
+
+    public void setDistance(int distance) {
+        this.distance = distance;
     }
 }

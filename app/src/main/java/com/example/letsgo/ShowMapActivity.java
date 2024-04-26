@@ -1,9 +1,13 @@
 package com.example.letsgo;
 
+import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.net.Uri;
+import android.net.wifi.ScanResult;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
@@ -23,18 +27,24 @@ import com.google.firebase.storage.StorageReference;
 
 import java.sql.Ref;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-public class ShowMapActivity extends AppCompatActivity {
+public class ShowMapActivity extends AppCompatActivity implements WifiScanListener {
 
     protected FirebaseFirestore firestore;
-
     protected StorageReference storageReference;
     private MapInfo mapInfo;
     private ArrayList<RefPoint> refPoints;
-
+    private Map<String , Integer> accessPoints;
     private ImageView imageView;
     private ViewGroup rootView;
+    private Button button;
 
+    @SuppressLint("MissingInflatedId")
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_show_map);
@@ -42,6 +52,8 @@ public class ShowMapActivity extends AppCompatActivity {
         String mapDocId = getIntent().getStringExtra("mapDocId");
         firestore = FirebaseFirestore.getInstance();
         DocumentReference docRef = firestore.collection("map").document(mapDocId);
+        button = findViewById(R.id.locateButton);
+
         docRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
             @Override
             public void onSuccess(DocumentSnapshot documentSnapshot) {
@@ -62,6 +74,11 @@ public class ShowMapActivity extends AppCompatActivity {
                 loadReferencePoints(mapDocId , location);
 
             }
+        });
+
+        button.setOnClickListener(view -> {
+            WifiScanner wifiScanner = new WifiScanner(this, this);
+            wifiScanner.startNonPeriodicScan();
         });
     }
 
@@ -110,5 +127,107 @@ public class ShowMapActivity extends AppCompatActivity {
         rootView.addView(icon, params);
     }
 
+    private void showLocationPoint(float x  , float y){
+
+        int[] location = new int[2];
+        imageView.getLocationOnScreen(location);
+
+        int absoluteX = (int) (location[0] + x ) ;
+        int absoluteY = (int) (location[1] + y ) ;
+
+        ImageView icon = new ImageView(this);
+
+        icon.setImageResource(R.drawable.baseline_location_on_24);
+        int size = getResources().getDimensionPixelSize(R.dimen.icon_size);
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(size,size);
+
+        params.leftMargin = absoluteX - size/2;
+        params.topMargin = absoluteY - size/2 ;
+
+        rootView.addView(icon, params);
+    }
+
+    @Override
+    public void onWifiScanReceived(List<ScanResult> scanResultList) {
+        accessPoints = new HashMap<>();
+        for(ScanResult scanResult : scanResultList){
+            accessPoints.put(scanResult.BSSID , scanResult.level);
+        }
+
+        ArrayList<LocatorPoint> locatorPoints = new ArrayList<>();
+        for (RefPoint refPoint : refPoints){
+            int distance = calculateEuclideanDistance(accessPoints , refPoint.getAccessPointList());
+            Log.d("Locators" , distance+"");
+            LocatorPoint locatorPoint = new LocatorPoint();
+            locatorPoint.setDistance(distance);
+            locatorPoint.setRefPointX(refPoint.getRefPointX());
+            locatorPoint.setRefPointY(refPoint.getRefPointY());
+            locatorPoints.add(locatorPoint);
+        }
+
+        locatorPoints.sort(Comparator.comparingInt(LocatorPoint::getDistance));
+        for (LocatorPoint locatorPoint : locatorPoints){
+            Log.d("Locators" , locatorPoint.getDistance()+" , ");
+        }
+        calculateWeightedAverage(locatorPoints);
+    }
+
+    private void calculateWeightedAverage(List<LocatorPoint> locatorPoints){
+        int k = 3;
+        int locatorPointsSize = locatorPoints.size();
+        
+        float weightedSumX = 0;
+        float weightedSumY = 0;
+        float sumWeight = 0;
+        float locationWeight;
+
+        List<LocatorPoint> kLocatorPoints =
+                locatorPoints.subList(0 , Math.min(k, locatorPointsSize));
+
+        for (LocatorPoint locatorPoint : kLocatorPoints){
+            if (locatorPoint.getDistance() != 0 ){
+                locationWeight = (float) 1 / locatorPoint.getDistance();
+            }
+            else {
+                locationWeight = 100 ;
+            }
+            
+            float x_cordinate = locatorPoint.getRefPointX() * imageView.getWidth() / 100;
+            float y_cordinate = locatorPoint.getRefPointY() * imageView.getHeight() / 100;
+            
+            sumWeight += locationWeight ;
+            weightedSumX += locationWeight * x_cordinate ;
+            weightedSumY += locationWeight * y_cordinate ;
+            
+        }
+
+        weightedSumX /= sumWeight;
+        weightedSumY /= sumWeight;
+
+        showLocationPoint(weightedSumX , weightedSumY);
+    }
+
+    private int calculateEuclideanDistance(Map<String , Integer> currentAPMap ,
+                                            List<AccessPoint> refPointAPList ){
+        Map<String , Integer> refPointAPMap = new HashMap<>();
+        for (AccessPoint accessPoint : refPointAPList){
+            refPointAPMap.put(accessPoint.getBssId() , accessPoint.getStrength());
+        }
+
+        int total_distance = 0 ;
+        for(Map.Entry<String , Integer> bssId : currentAPMap.entrySet()){
+            if (refPointAPMap.containsKey(bssId.getKey())){
+                int distance_1 = bssId.getValue();
+                int distance_2 = refPointAPMap.get(bssId.getKey());
+
+                int temp_distance = distance_1 - distance_2 ;
+                int distance = temp_distance * temp_distance;
+
+                total_distance += distance ;
+            }
+        }
+
+        return total_distance;
+    }
 
 }

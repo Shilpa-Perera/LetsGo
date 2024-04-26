@@ -2,18 +2,23 @@ package com.example.letsgo;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.Manifest;
 
 import android.net.Uri;
-import android.os.Build;
+import android.net.wifi.ScanResult;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.os.Looper;
 import android.text.InputType;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,7 +26,10 @@ import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -38,7 +46,8 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ReferencePointActivity extends AppCompatActivity {
 
@@ -49,10 +58,14 @@ public class ReferencePointActivity extends AppCompatActivity {
     private String mapDocId;
     private float imageViewWidth;
     private float imageViewHeight;
-
     private double latitude;
     private double longitude;
     private LocationRequest locationRequest;
+    private WifiScanner wifiScanner;
+    private AlertDialog dialog;
+    private ProgressBar progressBar;
+    private CountDownTimer countDownTimer;
+    private TextView tvCountDown;
 
 
     @SuppressLint("ClickableViewAccessibility")
@@ -96,7 +109,6 @@ public class ReferencePointActivity extends AppCompatActivity {
                 switch (action) {
                     case MotionEvent.ACTION_DOWN:
 
-
                         float x =  event.getX();
                         float y = event.getY() ;
 
@@ -107,7 +119,8 @@ public class ReferencePointActivity extends AppCompatActivity {
                         int topY = location[1];
 
                         displayIcon(x,y);
-                        showPlaceNameDialog(x,y , topX , topY);
+                        scanWifi();
+                        showProgressBar(x,y , topX , topY);
                 }
                 return true;
             }
@@ -140,8 +153,6 @@ public class ReferencePointActivity extends AppCompatActivity {
 
             }
         }
-
-
     }
 
     @Override
@@ -159,22 +170,32 @@ public class ReferencePointActivity extends AppCompatActivity {
     private void showPlaceNameDialog ( float x, float y, int X, int Y){
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle("Enter Reference Point Name");
+            builder.setCancelable(false);
 
             // Set up the input
             final EditText input = new EditText(this);
             input.setInputType(InputType.TYPE_CLASS_TEXT);
             builder.setView(input);
 
+
             // Percentages of points
             float relativeX = (x - X) * 100 / imageViewWidth;
             float relativeY = (y - Y) * 100 / imageViewHeight;
 
-            // Set up the buttons
             builder.setPositiveButton("Done", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     String locationName = input.getText().toString();
-                    RefPoint refPoint = new RefPoint(mapDocId, locationName, relativeX, relativeY);
+                    List<AccessPoint> accessPoints = wifiScanner.getScanResults();
+                    ArrayList<AccessPointInfo> accessPointInfos = new ArrayList<>();
+                    for(AccessPoint ap : accessPoints){
+                        AccessPointInfo accessPointInfo = new AccessPointInfo();
+                        accessPointInfo.setBssId(ap.getBssId());
+                        accessPointInfo.setMapId(mapDocId);
+                        accessPointInfos.add(accessPointInfo);
+                    }
+                    AccessPointManager.getAccessPointFromDatabase(accessPointInfos ,mapDocId);
+                    RefPoint refPoint = new RefPoint(mapDocId, locationName, relativeX, relativeY, accessPoints);
                     firestore.collection("ref_points")
                             .add(refPoint)
                             .addOnSuccessListener(documentReference -> {
@@ -184,15 +205,6 @@ public class ReferencePointActivity extends AppCompatActivity {
                                 Log.e("Firebase", "Error adding document", e);
                             });
                     ;
-                }
-            });
-            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    dialog.cancel();
-                    if (iconImageView != null) {
-                        rootView.removeView(iconImageView);
-                    }
                 }
             });
 
@@ -242,4 +254,65 @@ public class ReferencePointActivity extends AppCompatActivity {
             requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         }
     }
+
+    private void showProgressBar(float x,float y, int X, int Y){
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View dialogView = inflater.inflate(R.layout.custom_dialog_layout, null);
+        progressBar = dialogView.findViewById(R.id.progress_bar);
+        tvCountDown = dialogView.findViewById(R.id.countdown_text);
+        Button cancelButton = dialogView.findViewById(R.id.btnCancel);
+        cancelButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dismissProgressBar();
+                if (iconImageView != null) {
+                    rootView.removeView(iconImageView);
+                }
+            }
+        });
+
+        dialogView.setPadding(32, 32, 32, 32);
+
+        builder.setView(dialogView);
+        dialog = builder.create();
+        dialog.setCancelable(false);
+        dialog.show();
+
+        startCountDownTimer(x,y,X,Y);
     }
+
+    private void startCountDownTimer(float x, float y, int X, int Y) {
+         countDownTimer = new CountDownTimer(30000, 1000) { // 30 seconds
+            @Override
+            public void onTick(long millisUntilFinished) {
+                int progress = (int) (millisUntilFinished / 1000) * 100 / 30;
+                progressBar.setProgress(progress);
+                tvCountDown.setText("Please stay still: " + millisUntilFinished / 1000);
+            }
+
+            @Override
+            public void onFinish() {
+                dismissProgressBar();
+                showPlaceNameDialog(x,y,X,Y);
+            }
+        }.start();
+    }
+
+    private void dismissProgressBar() {
+        if (dialog != null && dialog.isShowing()) {
+            dialog.dismiss();
+        }
+        if (countDownTimer != null) {
+            countDownTimer.cancel();
+        }
+    }
+
+    private void scanWifi(){
+        wifiScanner = new WifiScanner(this);
+        wifiScanner.startPeriodicScan();
+    }
+
+
+}
+

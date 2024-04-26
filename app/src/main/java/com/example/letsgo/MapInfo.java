@@ -1,12 +1,22 @@
 package com.example.letsgo;
 
-public class MapInfo {
-    private String imageURI ;
-    private int mapHeight ;
-    private int mapWidth ;
-    private String mapName ;
+import com.google.firebase.firestore.PropertyName;
 
+
+public class MapInfo {
+
+    private String mapDocId;
+    @PropertyName("imageURI")
+    private String imageURI ;
+    @PropertyName("mapHeight")
+    private int mapHeight ;
+    @PropertyName("mapWidth")
+    private int mapWidth ;
+    @PropertyName("mapName")
+    private String mapName ;
+    @PropertyName("gpsLatitude")
     private double gpsLatitude;
+    @PropertyName("gpsLongitude")
     private double gpsLongitude;
 
     public MapInfo(String imageURI, int mapHeight, int mapWidth, String mapName) {
@@ -19,6 +29,13 @@ public class MapInfo {
     public MapInfo() {
     }
 
+    public String getMapDocId() {
+        return mapDocId;
+    }
+
+    public void setMapDocId(String mapDocId) {
+        this.mapDocId = mapDocId;
+    }
 
     public String getImageURI() {
         return imageURI;
@@ -66,5 +83,12 @@ public class MapInfo {
 
     public void setGpsLongitude(double gpsLongitude) {
         this.gpsLongitude = gpsLongitude;
+    }
+
+    @Override
+    public String toString(){
+        return mapName+"\n"+
+                "Latitude: "+gpsLatitude+"\n"+
+                "Longitude: "+gpsLongitude+"\n" ;
     }
 }
