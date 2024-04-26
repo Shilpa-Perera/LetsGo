@@ -1,4 +1,4 @@
-package com.example.letsgo;
+package com.example.letsgo.models;
 
 import com.google.firebase.firestore.PropertyName;
 

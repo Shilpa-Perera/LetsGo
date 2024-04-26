@@ -1,4 +1,4 @@
-package com.example.letsgo;
+package com.example.letsgo.helpers.wifi;
 
 import android.net.wifi.ScanResult;
 

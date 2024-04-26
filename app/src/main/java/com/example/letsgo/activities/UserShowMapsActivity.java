@@ -1,11 +1,10 @@
-package com.example.letsgo;
+package com.example.letsgo.activities;
 
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
@@ -13,6 +12,12 @@ import android.widget.ListView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.letsgo.helpers.gps.GPSLocationManager;
+import com.example.letsgo.helpers.gps.GPSLocationListener;
+import com.example.letsgo.R;
+import com.example.letsgo.helpers.Utils;
+import com.example.letsgo.models.GPSLocation;
+import com.example.letsgo.models.MapInfo;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -22,7 +27,7 @@ import com.google.firebase.firestore.QuerySnapshot;
 import java.util.ArrayList;
 import java.util.List;
 
-public class UserShowMapsActivity extends AppCompatActivity implements GPSLocationManager.GPSLocationListener {
+public class UserShowMapsActivity extends AppCompatActivity implements GPSLocationListener {
 
     private GPSLocationManager gpsLocationManager;
     private GPSLocation currentLocation;

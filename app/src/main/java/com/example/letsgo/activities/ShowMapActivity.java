@@ -1,10 +1,14 @@
-package com.example.letsgo;
+package com.example.letsgo.activities;
 
 import android.annotation.SuppressLint;
-import android.content.Intent;
-import android.net.Uri;
+import android.content.Context;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.net.wifi.ScanResult;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -14,6 +18,14 @@ import android.widget.RelativeLayout;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.letsgo.GlideApp;
+import com.example.letsgo.R;
+import com.example.letsgo.helpers.wifi.WifiScanListener;
+import com.example.letsgo.helpers.wifi.WifiScanner;
+import com.example.letsgo.models.AccessPoint;
+import com.example.letsgo.models.LocatorPoint;
+import com.example.letsgo.models.MapInfo;
+import com.example.letsgo.models.RefPoint;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -25,24 +37,27 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
-import java.sql.Ref;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ShowMapActivity extends AppCompatActivity implements WifiScanListener {
+public class ShowMapActivity extends AppCompatActivity implements WifiScanListener, SensorEventListener {
 
     protected FirebaseFirestore firestore;
     protected StorageReference storageReference;
     private MapInfo mapInfo;
+    private WifiScanner wifiScanner;
+    private Handler handler;
     private ArrayList<RefPoint> refPoints;
     private Map<String , Integer> accessPoints;
     private ImageView imageView;
+    private ImageView icon;
     private ViewGroup rootView;
     private Button button;
+    private SensorManager sensorManager;
+    private Sensor sensor;
 
     @SuppressLint("MissingInflatedId")
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,7 +67,13 @@ public class ShowMapActivity extends AppCompatActivity implements WifiScanListen
         String mapDocId = getIntent().getStringExtra("mapDocId");
         firestore = FirebaseFirestore.getInstance();
         DocumentReference docRef = firestore.collection("map").document(mapDocId);
-        button = findViewById(R.id.locateButton);
+//        button = findViewById(R.id.locateButton);
+        wifiScanner = new WifiScanner(this, this);
+        handler = new Handler();
+
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+
 
         docRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
             @Override
@@ -73,13 +94,33 @@ public class ShowMapActivity extends AppCompatActivity implements WifiScanListen
                 imageView.getLocationOnScreen(location);
                 loadReferencePoints(mapDocId , location);
 
+                getLocationUpdate();
+
             }
         });
 
-        button.setOnClickListener(view -> {
-            WifiScanner wifiScanner = new WifiScanner(this, this);
-            wifiScanner.startNonPeriodicScan();
-        });
+//        button.setOnClickListener(view -> {
+//            WifiScanner wifiScanner = new WifiScanner(this, this);
+//            wifiScanner.startNonPeriodicScan();
+//        });
+    }
+
+
+
+        private void getLocationUpdate(){
+        long delayMillis = 3000;
+        Runnable scanRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if(icon != null){
+                    rootView.removeView(icon);
+                }
+                wifiScanner.startNonPeriodicScan();
+                handler.postDelayed(this, delayMillis);
+            }
+        };
+
+        handler.postDelayed(scanRunnable, delayMillis);
     }
 
     private void loadReferencePoints(String mapDocId, int[] location ){
@@ -96,9 +137,8 @@ public class ShowMapActivity extends AppCompatActivity implements WifiScanListen
                             refPoints = new ArrayList<>();
                             for (QueryDocumentSnapshot document : task.getResult()) {
 
-                                showRefPoint(document.toObject(RefPoint.class), locationX, locationY);
+//                                showRefPoint(document.toObject(RefPoint.class), locationX, locationY);
                                 refPoints.add(document.toObject(RefPoint.class));
-                                Log.d("Data", document.getId() + " => " + document.getData());
                             }
                         } else {
                             Log.d("Data", "Error getting documents: ", task.getException());
@@ -135,10 +175,10 @@ public class ShowMapActivity extends AppCompatActivity implements WifiScanListen
         int absoluteX = (int) (location[0] + x ) ;
         int absoluteY = (int) (location[1] + y ) ;
 
-        ImageView icon = new ImageView(this);
+        icon = new ImageView(this);
 
-        icon.setImageResource(R.drawable.baseline_location_on_24);
-        int size = getResources().getDimensionPixelSize(R.dimen.icon_size);
+        icon.setImageResource(R.drawable.location);
+        int size = getResources().getDimensionPixelSize(R.dimen.locator_icon_size);
         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(size,size);
 
         params.leftMargin = absoluteX - size/2;
@@ -157,7 +197,7 @@ public class ShowMapActivity extends AppCompatActivity implements WifiScanListen
         ArrayList<LocatorPoint> locatorPoints = new ArrayList<>();
         for (RefPoint refPoint : refPoints){
             int distance = calculateEuclideanDistance(accessPoints , refPoint.getAccessPointList());
-            Log.d("Locators" , distance+"");
+//            Log.d("Locators" , distance+"");
             LocatorPoint locatorPoint = new LocatorPoint();
             locatorPoint.setDistance(distance);
             locatorPoint.setRefPointX(refPoint.getRefPointX());
@@ -167,7 +207,7 @@ public class ShowMapActivity extends AppCompatActivity implements WifiScanListen
 
         locatorPoints.sort(Comparator.comparingInt(LocatorPoint::getDistance));
         for (LocatorPoint locatorPoint : locatorPoints){
-            Log.d("Locators" , locatorPoint.getDistance()+" , ");
+//            Log.d("Locators" , locatorPoint.getDistance()+" , ");
         }
         calculateWeightedAverage(locatorPoints);
     }
@@ -228,6 +268,24 @@ public class ShowMapActivity extends AppCompatActivity implements WifiScanListen
         }
 
         return total_distance;
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        handler.removeCallbacksAndMessages(null);
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent sensorEvent) {
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int i) {
+
+    }
+
+    private void logDara(SensorEvent sensorEvent){
     }
 
 }

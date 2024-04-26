@@ -1,4 +1,4 @@
-package com.example.letsgo;
+package com.example.letsgo.helpers.gps;
 
 
 
@@ -7,11 +7,12 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Looper;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 
+import com.example.letsgo.helpers.gps.GPSLocationListener;
+import com.example.letsgo.models.GPSLocation;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
@@ -19,9 +20,9 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
 
 public class GPSLocationManager {
-    public interface GPSLocationListener {
-        void onLocationReceived(GPSLocation gpsLocation);
-    }
+//    public interface GPSLocationListener {
+//        void onLocationReceived(GPSLocation gpsLocation);
+//    }
     private GPSLocationListener gpsLocationListener;
 
 

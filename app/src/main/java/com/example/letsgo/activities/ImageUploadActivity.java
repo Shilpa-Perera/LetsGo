@@ -1,4 +1,4 @@
-package com.example.letsgo;
+package com.example.letsgo.activities;
 
 import android.app.Activity;
 import android.content.DialogInterface;
@@ -20,7 +20,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.letsgo.databinding.ActivityImageUploadBinding;
-import com.example.letsgo.databinding.ActivityMainBinding;
+import com.example.letsgo.models.MapInfo;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -33,12 +33,11 @@ import java.util.Date;
 import java.util.Locale;
 
 public class ImageUploadActivity extends AppCompatActivity {
-    ActivityImageUploadBinding binding ;
-    Uri imageUri;
-    StorageReference storageReference;
-
-    FirebaseFirestore firestore;
-    String mapDocId ;
+    private ActivityImageUploadBinding binding ;
+    private Uri imageUri;
+    private StorageReference storageReference;
+    private FirebaseFirestore firestore;
+    private String mapDocId ;
 
     @Override
     protected void onCreate(Bundle savedInstance ) {
@@ -73,17 +72,20 @@ public class ImageUploadActivity extends AppCompatActivity {
         builder.setPositiveButton("Upload", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                String mapName = input.getText().toString().trim(); // Get the entered map name
+                binding.uploadProgressBar.setVisibility(View.VISIBLE);
+                String mapName = input.getText().toString().trim();
 
                 SimpleDateFormat formatter = new SimpleDateFormat("yyyy_dd_HH_mm_ss", Locale.US);
                 Date now = new Date();
                 String fileName = formatter.format(now);
+
                 storageReference = FirebaseStorage.getInstance().getReference("images/"+fileName);
                 storageReference.putFile(imageUri)
                         .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                             @Override
                             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                                 Toast.makeText(ImageUploadActivity.this, "Successfully uploaded", Toast.LENGTH_SHORT).show();
+                                binding.uploadProgressBar.setVisibility(View.INVISIBLE);
                                 showImage(imageUri);
                             }
                         }).addOnFailureListener(new OnFailureListener() {
@@ -100,13 +102,12 @@ public class ImageUploadActivity extends AppCompatActivity {
                 firestore.collection("map")
                         .add(mapInfo)
                         .addOnSuccessListener(documentReference -> {
-                            // Document has been added successfully
-                            mapDocId = documentReference.getId(); // Get the generated document ID
-                            // You can now use the document ID as needed
+
+                            mapDocId = documentReference.getId();
                             Log.d("Firebase", "DocumentSnapshot written with ID: " + mapDocId);
                         })
                         .addOnFailureListener(e -> {
-                            // Handle errors
+
                             Log.e("Firebase", "Error adding document", e);
                         });;
             }

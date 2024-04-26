@@ -1,6 +1,8 @@
-package com.example.letsgo;
+package com.example.letsgo.helpers;
 
 import android.content.Context;
+
+import com.example.letsgo.models.MapInfo;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,8 +1,7 @@
-package com.example.letsgo;
+package com.example.letsgo.models;
 
 public class AccessPoint {
 
-    private String ssId;
     private String bssId ;
     private int strength;
 

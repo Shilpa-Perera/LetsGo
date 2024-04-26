@@ -1,4 +1,4 @@
-package com.example.letsgo;
+package com.example.letsgo.models;
 
 public class GPSLocation {
     private double latitude;

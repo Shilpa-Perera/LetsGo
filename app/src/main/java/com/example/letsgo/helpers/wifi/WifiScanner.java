@@ -1,4 +1,4 @@
-package com.example.letsgo;
+package com.example.letsgo.helpers.wifi;
 
 import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
@@ -13,7 +13,8 @@ import android.util.Log;
 
 import androidx.core.app.ActivityCompat;
 
-import org.checkerframework.checker.units.qual.A;
+import com.example.letsgo.helpers.wifi.WifiScanListener;
+import com.example.letsgo.models.AccessPoint;
 
 import java.util.ArrayList;
 import java.util.HashMap;
