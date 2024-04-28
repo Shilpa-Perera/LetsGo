@@ -12,7 +12,7 @@ Positioning systems, or location-based services (LBS), have become increasingly 
 
 ### User
 - Activate mobile phone location service (GPS)
-- Select indoor map for navigation
+- Select an indoor map for navigation
 
 ## Architecture
 
@@ -35,5 +35,8 @@ The system consists of two main components:
 
 - Consistency in RSS values is crucial for accuracy, but factors like interference and network fluctuations may cause variations.
 - Admins require meticulously scaled and detailed maps for accurate mapping.
+
+## UI
+
   
 
