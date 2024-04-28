@@ -36,7 +36,9 @@ The system consists of two main components:
 - Consistency in RSS values is crucial for accuracy, but factors like interference and network fluctuations may cause variations.
 - Admins require meticulously scaled and detailed maps for accurate mapping.
 
-## UI
+## User Interfaces
+![screen_shots](https://github.com/Shilpa-Perera/LetsGo/assets/76617051/5166489f-65d6-4f7c-9814-fb42fb6385ee)
+
 
   
 
