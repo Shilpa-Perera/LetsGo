@@ -23,7 +23,7 @@ public class AccessPointManager {
     }
 
     public static void getAccessPointFromDatabase(ArrayList<AccessPointInfo> currentList, String mapId){
-        Log.d("Here" , "I am here");
+//        Log.d("Here" , "I am here");
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection(COLLECTION_NAME)
                 .whereEqualTo("mapId", mapId)

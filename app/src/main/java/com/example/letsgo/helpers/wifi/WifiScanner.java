@@ -17,6 +17,7 @@ import com.example.letsgo.helpers.wifi.WifiScanListener;
 import com.example.letsgo.models.AccessPoint;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +32,7 @@ public class WifiScanner{
     private List<ScanResult> scanResults ;
     private List<AccessPoint> accessPoints;
     private Handler handler;
-    private int totalDuration = 20000;
+    private int totalDuration = 17000;
     private int scanInterval = 5000;
     private boolean isScanning = false;
     private int scanCount;
@@ -69,12 +70,21 @@ public class WifiScanner{
     };
 
     public void startPeriodicScan() {
-
         if (!isScanning) {
             isScanning = true;
             handler.postDelayed(scanRunnable, scanInterval);
             handler.postDelayed(stopScanRunnable, totalDuration);
         }
+    }
+
+    public void stopPeriodicScan(){
+        if (isScanning) {
+            isScanning = false;
+            handler.removeCallbacks(scanRunnable);
+            handler.removeCallbacks(stopScanRunnable);
+            Log.d(TAG , "Scanning stopped");
+        }
+
     }
 
     private void startWifiScan() {
@@ -84,7 +94,7 @@ public class WifiScanner{
                 boolean success = intent.getBooleanExtra(
                         WifiManager.EXTRA_RESULTS_UPDATED, false);
                 if (success) {
-                    Log.d(TAG, "Scan results received");
+//                    Log.d(TAG, "Scan results received");
                     scanSuccess();
                 } else {
                     Log.d(TAG, "Scan results not received");
@@ -104,12 +114,13 @@ public class WifiScanner{
     }
     private void scanSuccess() {
         @SuppressLint("MissingPermission") List<ScanResult> results = wifiManager.getScanResults();
-        for (ScanResult result : results ){
-            Log.d("Wifi", "BSSID: " + result.BSSID + ", RSSI: " + result.level);
-        }
+//        for (ScanResult result : results ){
+//            Log.d("Wifi", "BSSID: " + result.BSSID + ", RSSI: " + result.level);
+//        }
         scanResults.addAll(results);
         scanCount ++ ;
-        if(scanCount == 3){
+        if(scanCount == 2){
+            isScanning = false;
             scanResultsAnalyser();
         }
         context.unregisterReceiver(wifiScanReceiver);
@@ -132,19 +143,21 @@ public class WifiScanner{
         Map<String, Integer[]> signalStrengths = new HashMap<>();
 
         for (ScanResult result : scanResults) {
+            String ssId = result.SSID;
             String bssId = result.BSSID;
             int strength = result.level;
 
-            if (signalStrengths.containsKey(bssId)) {
-                Integer[] data = signalStrengths.get(bssId);
-                data[0] += strength;
-                data[1]++;
-            } else {
-                signalStrengths.put(bssId, new Integer[]{strength, 1});
+//            if (ssId.equals("UoM_Wireless") || ssId.equals("eduroam")) {
+                if (signalStrengths.containsKey(bssId)) {
+                    Integer[] data = signalStrengths.get(bssId);
+                    data[0] += strength;
+                    data[1]++;
+                } else {
+                    signalStrengths.put(bssId, new Integer[]{strength, 1});
+                }
             }
-        }
+//        }
 
-        // Calculate average signal strength for each BSSID
         accessPoints = new ArrayList<>();
         for (Map.Entry<String, Integer[]> entry : signalStrengths.entrySet()) {
             String bssId = entry.getKey();
@@ -153,8 +166,17 @@ public class WifiScanner{
             accessPoints.add(new AccessPoint(bssId, averageStrength));
         }
 
-        for(AccessPoint ap : accessPoints){
-            Log.d("WifiScanner" , "BSSID: " + ap.getBssId() + ", RSSI: " + ap.getStrength());
+        accessPoints.sort(new Comparator<AccessPoint>() {
+            @Override
+            public int compare(AccessPoint o1, AccessPoint o2) {
+                return Integer.compare(o2.getStrength(), o1.getStrength());
+            }
+        });
+
+        List<AccessPoint> topFiveStrongest = accessPoints.subList(0, Math.min(5, accessPoints.size()));
+        accessPoints = topFiveStrongest;
+        for (AccessPoint accessPoint : accessPoints){
+//            Log.d("AP_BLAH" , accessPoint.getStrength()+"");
         }
     }
 
@@ -190,7 +212,6 @@ public class WifiScanner{
             intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
             context.registerReceiver(wifiScanReceiver, intentFilter);
 
-            // Start Wi-Fi scan
             boolean success = wifiManager.startScan();
             if (!success) {
                 scanFailure();

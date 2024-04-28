@@ -44,6 +44,7 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firestore.v1.TargetOrBuilder;
 
 
 import java.util.ArrayList;
@@ -88,7 +89,6 @@ public class ReferencePointActivity extends AppCompatActivity {
         mapDocId = getIntent().getStringExtra("mapDocId");
         rootView = findViewById(android.R.id.content);
 
-        /** Get Location Update */
         locationRequest = new LocationRequest.
                 Builder(Priority.PRIORITY_HIGH_ACCURACY,2000).build();
         getCurrentLocation();
@@ -112,11 +112,17 @@ public class ReferencePointActivity extends AppCompatActivity {
                         float x =  event.getX();
                         float y = event.getY() ;
 
+                        Log.d("Referencing Activity" , "AbsX : "+x);
+                        Log.d("Referencing Activity", "AbsY : "+ y);
+
                         int[] location = new int[2];
                         imageView.getLocationOnScreen(location);
 
                         int topX = location[0];
                         int topY = location[1];
+
+                        Log.d("Referencing Activity" , "topX : "+ topX);
+                        Log.d("Referencing Activity" , "topY : "+topY);
 
                         displayIcon(x,y);
                         scanWifi();
@@ -172,13 +178,13 @@ public class ReferencePointActivity extends AppCompatActivity {
             builder.setTitle("Enter Reference Point Name");
             builder.setCancelable(false);
 
-            // Set up the input
+
             final EditText input = new EditText(this);
             input.setInputType(InputType.TYPE_CLASS_TEXT);
             builder.setView(input);
 
 
-            // Percentages of points
+
             float relativeX = (x - X) * 100 / imageViewWidth;
             float relativeY = (y - Y) * 100 / imageViewHeight;
 
@@ -194,7 +200,7 @@ public class ReferencePointActivity extends AppCompatActivity {
                         accessPointInfo.setMapId(mapDocId);
                         accessPointInfos.add(accessPointInfo);
                     }
-                    AccessPointManager.getAccessPointFromDatabase(accessPointInfos ,mapDocId);
+//                    AccessPointManager.getAccessPointFromDatabase(accessPointInfos ,mapDocId);
                     RefPoint refPoint = new RefPoint(mapDocId, locationName, relativeX, relativeY, accessPoints);
                     firestore.collection("ref_points")
                             .add(refPoint)
@@ -213,12 +219,16 @@ public class ReferencePointActivity extends AppCompatActivity {
 
     private void displayIcon ( float x, float y){
             iconImageView = new ImageView(this);
-            iconImageView.setImageResource(R.drawable.baseline_location_on_24); // Set your icon here
-            int size = getResources().getDimensionPixelSize(R.dimen.icon_size); // Set icon size
+            iconImageView.setImageResource(R.drawable.baseline_location_on_24);
+            int size = getResources().getDimensionPixelSize(R.dimen.icon_size);
             RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(size, size);
             params.leftMargin = (int) x - size / 2;
             params.topMargin = (int) y - size / 2;
-            rootView.addView(iconImageView, params); // Add icon to root view
+
+            Log.d("Referencing Activity" , "leftMargin : "+ params.leftMargin);
+            Log.d("Referencing Activity" , "rightMargin : "+ params.topMargin );
+
+            rootView.addView(iconImageView, params);
         }
 
     private void getCurrentLocation() {
@@ -266,6 +276,7 @@ public class ReferencePointActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 dismissProgressBar();
+                wifiScanner.stopPeriodicScan();
                 if (iconImageView != null) {
                     rootView.removeView(iconImageView);
                 }
@@ -283,10 +294,10 @@ public class ReferencePointActivity extends AppCompatActivity {
     }
 
     private void startCountDownTimer(float x, float y, int X, int Y) {
-         countDownTimer = new CountDownTimer(30000, 1000) { // 30 seconds
+         countDownTimer = new CountDownTimer(17000, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
-                int progress = (int) (millisUntilFinished / 1000) * 100 / 30;
+                int progress = (int) (millisUntilFinished / 1000) * 100 / 17;
                 progressBar.setProgress(progress);
                 tvCountDown.setText("Please stay still: " + millisUntilFinished / 1000);
             }

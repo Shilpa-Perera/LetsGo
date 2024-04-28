@@ -38,12 +38,13 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ShowMapActivity extends AppCompatActivity implements WifiScanListener, SensorEventListener {
+public class ShowMapActivity extends AppCompatActivity implements WifiScanListener{
 
     protected FirebaseFirestore firestore;
     protected StorageReference storageReference;
@@ -55,9 +56,6 @@ public class ShowMapActivity extends AppCompatActivity implements WifiScanListen
     private ImageView imageView;
     private ImageView icon;
     private ViewGroup rootView;
-    private Button button;
-    private SensorManager sensorManager;
-    private Sensor sensor;
 
     @SuppressLint("MissingInflatedId")
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,19 +65,15 @@ public class ShowMapActivity extends AppCompatActivity implements WifiScanListen
         String mapDocId = getIntent().getStringExtra("mapDocId");
         firestore = FirebaseFirestore.getInstance();
         DocumentReference docRef = firestore.collection("map").document(mapDocId);
-//        button = findViewById(R.id.locateButton);
         wifiScanner = new WifiScanner(this, this);
         handler = new Handler();
-
-        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 
 
         docRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
             @Override
             public void onSuccess(DocumentSnapshot documentSnapshot) {
                 mapInfo = documentSnapshot.toObject(MapInfo.class);
-                Log.d("GET FIREBASE DATA" , mapInfo.getMapName()+" , "+mapInfo
+                Log.d("Map Data" , mapInfo.getMapName()+" , "+mapInfo
                         .getImageURI());
 
                 imageView = findViewById(R.id.finalImage);
@@ -99,28 +93,24 @@ public class ShowMapActivity extends AppCompatActivity implements WifiScanListen
             }
         });
 
-//        button.setOnClickListener(view -> {
-//            WifiScanner wifiScanner = new WifiScanner(this, this);
-//            wifiScanner.startNonPeriodicScan();
-//        });
     }
 
 
 
         private void getLocationUpdate(){
-        long delayMillis = 3000;
-        Runnable scanRunnable = new Runnable() {
-            @Override
-            public void run() {
-                if(icon != null){
-                    rootView.removeView(icon);
+            long delayMillis = 5000;
+            Runnable scanRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    if(icon != null){
+                        rootView.removeView(icon);
+                    }
+                    wifiScanner.startNonPeriodicScan();
+                    handler.postDelayed(this, delayMillis);
                 }
-                wifiScanner.startNonPeriodicScan();
-                handler.postDelayed(this, delayMillis);
-            }
-        };
+            };
 
-        handler.postDelayed(scanRunnable, delayMillis);
+            handler.postDelayed(scanRunnable, delayMillis);
     }
 
     private void loadReferencePoints(String mapDocId, int[] location ){
@@ -184,31 +174,51 @@ public class ShowMapActivity extends AppCompatActivity implements WifiScanListen
         params.leftMargin = absoluteX - size/2;
         params.topMargin = absoluteY - size/2 ;
 
+        Log.d("Final" , params.leftMargin+" ");
+        Log.d("Final", params.topMargin + " ");
+//
+//        params.leftMargin = (int) x - size/2;
+//        params.topMargin = (int)  y - size/2 ;
+
         rootView.addView(icon, params);
     }
 
     @Override
     public void onWifiScanReceived(List<ScanResult> scanResultList) {
+
+//        List<ScanResult> filteredRessults = new ArrayList<>();
+//
+//        for(ScanResult scanResult : scanResultList){
+//            if (scanResult.SSID.equals("UoM_Wireless") || scanResult.SSID.equals("eduroam")) {
+//                filteredRessults.add(scanResult);
+//            }
+//
+//        }
+        scanResultList.sort(new Comparator<ScanResult>() {
+            @Override
+            public int compare(ScanResult o1, ScanResult o2) {
+                return Integer.compare(o2.level, o1.level);
+            }
+        });
+
+        List<ScanResult> topFiveStrongest = scanResultList.subList(0, Math.min(5, scanResultList.size()));
+
         accessPoints = new HashMap<>();
-        for(ScanResult scanResult : scanResultList){
+        for(ScanResult scanResult : topFiveStrongest){
             accessPoints.put(scanResult.BSSID , scanResult.level);
         }
 
         ArrayList<LocatorPoint> locatorPoints = new ArrayList<>();
         for (RefPoint refPoint : refPoints){
-            int distance = calculateEuclideanDistance(accessPoints , refPoint.getAccessPointList());
-//            Log.d("Locators" , distance+"");
-            LocatorPoint locatorPoint = new LocatorPoint();
-            locatorPoint.setDistance(distance);
-            locatorPoint.setRefPointX(refPoint.getRefPointX());
-            locatorPoint.setRefPointY(refPoint.getRefPointY());
-            locatorPoints.add(locatorPoint);
+                int distance = calculateEuclideanDistance(accessPoints , refPoint.getAccessPointList());
+                LocatorPoint locatorPoint = new LocatorPoint();
+                locatorPoint.setDistance(distance);
+                locatorPoint.setRefPointX(refPoint.getRefPointX());
+                locatorPoint.setRefPointY(refPoint.getRefPointY());
+                locatorPoints.add(locatorPoint);
         }
 
         locatorPoints.sort(Comparator.comparingInt(LocatorPoint::getDistance));
-        for (LocatorPoint locatorPoint : locatorPoints){
-//            Log.d("Locators" , locatorPoint.getDistance()+" , ");
-        }
         calculateWeightedAverage(locatorPoints);
     }
 
@@ -224,6 +234,11 @@ public class ShowMapActivity extends AppCompatActivity implements WifiScanListen
         List<LocatorPoint> kLocatorPoints =
                 locatorPoints.subList(0 , Math.min(k, locatorPointsSize));
 
+        int[] location = new int[2];
+        imageView.getLocationOnScreen(location);
+        int topX = location[0];
+        int topY = location[1];
+
         for (LocatorPoint locatorPoint : kLocatorPoints){
             if (locatorPoint.getDistance() != 0 ){
                 locationWeight = (float) 1 / locatorPoint.getDistance();
@@ -232,26 +247,44 @@ public class ShowMapActivity extends AppCompatActivity implements WifiScanListen
                 locationWeight = 100 ;
             }
             
-            float x_cordinate = locatorPoint.getRefPointX() * imageView.getWidth() / 100;
-            float y_cordinate = locatorPoint.getRefPointY() * imageView.getHeight() / 100;
+            float x_cordinate = (locatorPoint.getRefPointX()) * imageView.getWidth() / 100;
+            float y_cordinate = (locatorPoint.getRefPointY()) * imageView.getHeight() / 100;
+
+            Log.d("Locator Point" , x_cordinate + " , "+ y_cordinate);
+            Log.d("Locator Point" , "locationWeight : "+ locationWeight);
             
             sumWeight += locationWeight ;
             weightedSumX += locationWeight * x_cordinate ;
             weightedSumY += locationWeight * y_cordinate ;
-            
+
         }
 
         weightedSumX /= sumWeight;
         weightedSumY /= sumWeight;
+
+        Log.d("MapShow" , "topX : "+ topX);
+        Log.d("MapShow" , "topY : "+ topY );
+
+        Log.d("MapShow" , "weightedSumX : "+ weightedSumX);
+        Log.d("MapShow" , "weightedSumY : "+ weightedSumY);
 
         showLocationPoint(weightedSumX , weightedSumY);
     }
 
     private int calculateEuclideanDistance(Map<String , Integer> currentAPMap ,
                                             List<AccessPoint> refPointAPList ){
+
+        for (Map.Entry<String, Integer> entry : currentAPMap.entrySet()) {
+            Log.d("CurrentAP","Key: " + entry.getKey() + ", Value: " + entry.getValue());
+        }
+
         Map<String , Integer> refPointAPMap = new HashMap<>();
         for (AccessPoint accessPoint : refPointAPList){
             refPointAPMap.put(accessPoint.getBssId() , accessPoint.getStrength());
+        }
+
+        for (Map.Entry<String, Integer> entry : refPointAPMap.entrySet()) {
+            Log.d("RefPointAP","Key: " + entry.getKey() + ", Value: " + entry.getValue());
         }
 
         int total_distance = 0 ;
@@ -274,18 +307,6 @@ public class ShowMapActivity extends AppCompatActivity implements WifiScanListen
     protected void onDestroy() {
         super.onDestroy();
         handler.removeCallbacksAndMessages(null);
-    }
-
-    @Override
-    public void onSensorChanged(SensorEvent sensorEvent) {
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int i) {
-
-    }
-
-    private void logDara(SensorEvent sensorEvent){
     }
 
 }
