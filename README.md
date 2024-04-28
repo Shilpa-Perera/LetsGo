@@ -37,7 +37,7 @@ The system consists of two main components:
 - Admins require meticulously scaled and detailed maps for accurate mapping.
 
 ## User Interfaces
-![screen_shots](https://github.com/Shilpa-Perera/LetsGo/assets/76617051/5166489f-65d6-4f7c-9814-fb42fb6385ee)
+![screen_shots](https://github.com/Shilpa-Perera/LetsGo/assets/76617051/345ca333-00f5-43ce-8707-a297b8d8f115)
 
 
   
