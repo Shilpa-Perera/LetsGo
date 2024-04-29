@@ -162,8 +162,8 @@ public class ShowMapActivity extends AppCompatActivity implements WifiScanListen
         int[] location = new int[2];
         imageView.getLocationOnScreen(location);
 
-        int absoluteX = (int) (location[0] + x ) ;
-        int absoluteY = (int) (location[1] + y ) ;
+        int absoluteX = (int) (x ) ;
+        int absoluteY = (int) ( y ) ;
 
         icon = new ImageView(this);
 
@@ -186,22 +186,23 @@ public class ShowMapActivity extends AppCompatActivity implements WifiScanListen
     @Override
     public void onWifiScanReceived(List<ScanResult> scanResultList) {
 
-//        List<ScanResult> filteredRessults = new ArrayList<>();
-//
-//        for(ScanResult scanResult : scanResultList){
-//            if (scanResult.SSID.equals("UoM_Wireless") || scanResult.SSID.equals("eduroam")) {
-//                filteredRessults.add(scanResult);
-//            }
-//
-//        }
-        scanResultList.sort(new Comparator<ScanResult>() {
+        List<ScanResult> filteredRessults = new ArrayList<>();
+
+        for(ScanResult scanResult : scanResultList){
+            if (scanResult.SSID.equals("UoM_Wireless") || scanResult.SSID.equals("eduroam")) {
+                filteredRessults.add(scanResult);
+            }
+
+        }
+        filteredRessults.sort(new Comparator<ScanResult>() {
             @Override
             public int compare(ScanResult o1, ScanResult o2) {
                 return Integer.compare(o2.level, o1.level);
             }
         });
 
-        List<ScanResult> topFiveStrongest = scanResultList.subList(0, Math.min(5, scanResultList.size()));
+        //TODO: REMOVING TAKING TOP FIVE
+        List<ScanResult> topFiveStrongest = filteredRessults.subList(0, Math.min(5, filteredRessults.size()));
 
         accessPoints = new HashMap<>();
         for(ScanResult scanResult : topFiveStrongest){
@@ -247,8 +248,11 @@ public class ShowMapActivity extends AppCompatActivity implements WifiScanListen
                 locationWeight = 100 ;
             }
             
-            float x_cordinate = (locatorPoint.getRefPointX()) * imageView.getWidth() / 100;
-            float y_cordinate = (locatorPoint.getRefPointY()) * imageView.getHeight() / 100;
+//            float x_cordinate = (locatorPoint.getRefPointX()) * imageView.getWidth() / 100;
+//            float y_cordinate = (locatorPoint.getRefPointY()) * imageView.getHeight() / 100;
+
+            float x_cordinate = locatorPoint.getRefPointX();
+            float y_cordinate = locatorPoint.getRefPointY();
 
             Log.d("Locator Point" , x_cordinate + " , "+ y_cordinate);
             Log.d("Locator Point" , "locationWeight : "+ locationWeight);
@@ -296,12 +300,44 @@ public class ShowMapActivity extends AppCompatActivity implements WifiScanListen
                 int temp_distance = distance_1 - distance_2 ;
                 int distance = temp_distance * temp_distance;
 
+//                int distance1 = (int) Math.sqrt(distance);
+
                 total_distance += distance ;
             }
         }
 
         return total_distance;
     }
+
+    private int calculateManhattanDistance(Map<String, Integer> currentAPMap, List<AccessPoint> refPointAPList) {
+        for (Map.Entry<String, Integer> entry : currentAPMap.entrySet()) {
+            Log.d("CurrentAP", "Key: " + entry.getKey() + ", Value: " + entry.getValue());
+        }
+
+        Map<String, Integer> refPointAPMap = new HashMap<>();
+        for (AccessPoint accessPoint : refPointAPList) {
+            refPointAPMap.put(accessPoint.getBssId(), accessPoint.getStrength());
+        }
+
+        for (Map.Entry<String, Integer> entry : refPointAPMap.entrySet()) {
+            Log.d("RefPointAP", "Key: " + entry.getKey() + ", Value: " + entry.getValue());
+        }
+
+        int totalDistance = 0;
+        for (Map.Entry<String, Integer> bssId : currentAPMap.entrySet()) {
+            if (refPointAPMap.containsKey(bssId.getKey())) {
+                int distance1 = bssId.getValue();
+                int distance2 = refPointAPMap.get(bssId.getKey());
+
+                int tempDistance = Math.abs(distance1 - distance2);
+
+                totalDistance += tempDistance;
+            }
+        }
+
+        return totalDistance;
+    }
+
 
     @Override
     protected void onDestroy() {

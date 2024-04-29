@@ -147,7 +147,7 @@ public class WifiScanner{
             String bssId = result.BSSID;
             int strength = result.level;
 
-//            if (ssId.equals("UoM_Wireless") || ssId.equals("eduroam")) {
+            if (ssId.equals("UoM_Wireless") || ssId.equals("eduroam")) {
                 if (signalStrengths.containsKey(bssId)) {
                     Integer[] data = signalStrengths.get(bssId);
                     data[0] += strength;
@@ -156,7 +156,7 @@ public class WifiScanner{
                     signalStrengths.put(bssId, new Integer[]{strength, 1});
                 }
             }
-//        }
+        }
 
         accessPoints = new ArrayList<>();
         for (Map.Entry<String, Integer[]> entry : signalStrengths.entrySet()) {
@@ -173,11 +173,11 @@ public class WifiScanner{
             }
         });
 
-        List<AccessPoint> topFiveStrongest = accessPoints.subList(0, Math.min(5, accessPoints.size()));
-        accessPoints = topFiveStrongest;
-        for (AccessPoint accessPoint : accessPoints){
-//            Log.d("AP_BLAH" , accessPoint.getStrength()+"");
-        }
+//        List<AccessPoint> topFiveStrongest = accessPoints.subList(0, Math.min(5, accessPoints.size()));
+//        accessPoints = topFiveStrongest;
+//        for (AccessPoint accessPoint : accessPoints){
+////            Log.d("AP_BLAH" , accessPoint.getStrength()+"");
+//        }
     }
 
     public List<AccessPoint> getScanResults(){

@@ -201,7 +201,7 @@ public class ReferencePointActivity extends AppCompatActivity {
                         accessPointInfos.add(accessPointInfo);
                     }
 //                    AccessPointManager.getAccessPointFromDatabase(accessPointInfos ,mapDocId);
-                    RefPoint refPoint = new RefPoint(mapDocId, locationName, relativeX, relativeY, accessPoints);
+                    RefPoint refPoint = new RefPoint(mapDocId, locationName, x, y, accessPoints);
                     firestore.collection("ref_points")
                             .add(refPoint)
                             .addOnSuccessListener(documentReference -> {
@@ -219,7 +219,7 @@ public class ReferencePointActivity extends AppCompatActivity {
 
     private void displayIcon ( float x, float y){
             iconImageView = new ImageView(this);
-            iconImageView.setImageResource(R.drawable.baseline_location_on_24);
+            iconImageView.setImageResource(R.drawable.baseline_circle_24);
             int size = getResources().getDimensionPixelSize(R.dimen.icon_size);
             RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(size, size);
             params.leftMargin = (int) x - size / 2;
