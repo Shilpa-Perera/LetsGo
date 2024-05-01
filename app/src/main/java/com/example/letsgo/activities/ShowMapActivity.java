@@ -202,10 +202,10 @@ public class ShowMapActivity extends AppCompatActivity implements WifiScanListen
         });
 
         //TODO: REMOVING TAKING TOP FIVE
-        List<ScanResult> topFiveStrongest = filteredRessults.subList(0, Math.min(5, filteredRessults.size()));
+//        List<ScanResult> topFiveStrongest = filteredRessults.subList(0, Math.min(5, filteredRessults.size()));
 
         accessPoints = new HashMap<>();
-        for(ScanResult scanResult : topFiveStrongest){
+        for(ScanResult scanResult : filteredRessults){
             accessPoints.put(scanResult.BSSID , scanResult.level);
         }
 
