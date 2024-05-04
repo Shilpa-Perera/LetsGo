@@ -1,4 +1,4 @@
-# Let'sGo - Indoor navigation using wifi fingerprinting
+# Let'sGo - Indoor positioning using wifi fingerprinting
 
 ## Introduction
 
